@@ -1,0 +1,43 @@
+name: DevOps CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+
+  build-and-test:
+
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - name: Checkout Source
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      # Frontend Setup
+      - name: Install Frontend Dependencies
+        working-directory: ./frontend
+        run: npm install
+
+      - name: Build Frontend
+        working-directory: ./frontend
+        run: npm run build
+
+      # Backend Setup
+      - name: Install Backend Dependencies
+        working-directory: ./backend
+        run: npm install
+
+      # Docker Build
+      - name: Build Backend Docker Image
+        run: docker build -t backend-image ./backend
+
+      - name: Build Frontend Docker Image
+        run: docker build -t frontend-image ./frontend
