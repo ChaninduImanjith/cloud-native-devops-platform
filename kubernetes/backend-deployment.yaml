@@ -15,6 +15,7 @@ spec:
       containers:
         - name: backend
           image: chaninduimanjith/cloud-native-devops-backend:latest
+          imagePullPolicy: Never
           ports:
             - containerPort: 5000
           env:
