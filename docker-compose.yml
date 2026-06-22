@@ -6,6 +6,7 @@ services:
     build: ./backend
     ports:
       - "5000:5000"
+    restart: unless-stopped
 
   frontend:
     build: ./frontend
@@ -13,3 +14,4 @@ services:
       - "3000:3000"
     depends_on:
       - backend
+    restart: unless-stopped
