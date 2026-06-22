@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: backend
-          image: chaninduimanjith/cloud-native-devops-platform-backend:latest
+          image: chaninduimanjith/cloud-native-devops-backend:latest
           ports:
             - containerPort: 5000
           env:

@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: frontend
-          image: chaninduimanjith/cloud-native-devops-platform-frontend:latest
+          image: chaninduimanjith/cloud-native-devops-frontend:latest
           ports:
             - containerPort: 3000
           env:
