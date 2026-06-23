@@ -64,6 +64,5 @@ jobs:
             --from-literal=password='${{ secrets.GMAIL_APP_PASSWORD }}' \
             --dry-run=client -o yaml | kubectl apply -f -
           
-          # Apply other manifests
-          kubectl apply -f kubernetes/
+          # Apply monitoring config separately (not in argocd path)
           kubectl apply -f monitoring/alertmanager-config.yaml
