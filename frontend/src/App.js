@@ -9,7 +9,7 @@ function App() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const apiUrl = process.env.REACT_APP_API_URL || "http://localhost:5000";
+        const apiUrl = process.env.REACT_APP_API_URL || "";
         
         // Fetch custom message
         const msgRes = await fetch(`${apiUrl}/api/message`);
