@@ -35,3 +35,35 @@ jobs:
           context: ./frontend
           push: true
           tags: chaninduimanjith/cloud-native-devops-frontend:latest
+
+  deploy:
+    needs: docker
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1 # Change to your region
+
+      - name: Update KubeConfig
+        run: aws eks update-kubeconfig --name cloud-native-cluster --region us-east-1
+
+      - name: Inject Secrets to Kubernetes
+        run: |
+          # Create namespace if it doesn't exist
+          kubectl create namespace monitoring --dry-run=client -o yaml | kubectl apply -f -
+          
+          # Create the Alertmanager SMTP password secret securely from GitHub Secrets
+          kubectl create secret generic alertmanager-auth \
+            --namespace monitoring \
+            --from-literal=password='${{ secrets.GMAIL_APP_PASSWORD }}' \
+            --dry-run=client -o yaml | kubectl apply -f -
+          
+          # Apply other manifests
+          kubectl apply -f kubernetes/
+          kubectl apply -f monitoring/alertmanager-config.yaml

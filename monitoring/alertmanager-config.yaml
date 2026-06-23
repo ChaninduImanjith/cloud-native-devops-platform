@@ -26,9 +26,9 @@ stringData:
     global:
       resolve_timeout: 5m
       smtp_smarthost: 'smtp.gmail.com:587'
-      smtp_from: '<YOUR_EMAIL@gmail.com>'
-      smtp_auth_username: '<YOUR_EMAIL@gmail.com>'
-      smtp_auth_password: '<YOUR_GMAIL_APP_PASSWORD>'
+      smtp_from: 'chanindu.imanjith@gmail.com'
+      smtp_auth_username: 'chanindu.imanjith@gmail.com'
+      smtp_auth_password_file: '/etc/alertmanager/secrets/alertmanager-auth/password'
       smtp_require_tls: true
 
     templates:
@@ -65,7 +65,7 @@ stringData:
 
       - name: 'critical-receiver'
         email_configs:
-          - to: '<YOUR_EMAIL@gmail.com>'
+          - to: 'chanindu.imanjith@gmail.com'
             send_resolved: true
             headers:
               Subject: '🚨 [CRITICAL] {{ .GroupLabels.alertname }}'
