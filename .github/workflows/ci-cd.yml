@@ -51,7 +51,7 @@ jobs:
           aws-region: us-east-1 # Change to your region
 
       - name: Update KubeConfig
-        run: aws eks update-kubeconfig --name cloud-native-cluster --region us-east-1
+        run: aws eks update-kubeconfig --name cloud-native-devops-cluster --region us-east-1
 
       - name: Inject Secrets to Kubernetes
         run: |
