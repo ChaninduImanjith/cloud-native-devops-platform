@@ -2,6 +2,9 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: backend
+  labels:
+    app: backend
+    version: "2.0.0"
 spec:
   replicas: 1
   selector:
@@ -11,13 +14,21 @@ spec:
     metadata:
       labels:
         app: backend
+        version: "2.0.0"
+      annotations:
+        # Tells Prometheus to scrape this pod directly (pod-level scraping)
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "5000"
+        prometheus.io/path: "/metrics"
     spec:
       containers:
         - name: backend
           image: chaninduimanjith/cloud-native-devops-backend:latest
           imagePullPolicy: Never
           ports:
-            - containerPort: 5000
+            - name: http
+              containerPort: 5000
+              protocol: TCP
           env:
             - name: DB_HOST
               value: postgres
@@ -29,3 +40,50 @@ spec:
               value: postgres
             - name: DB_NAME
               value: devopsdb
+            - name: NODE_ENV
+              value: production
+
+          # ── Resource Limits (important for Grafana CPU/Memory panels) ─────────
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+
+          # ── Startup Probe ──────────────────────────────────────────────────────
+          # Gives the app up to 30s (10 * 3s) to start before K8s kills it
+          startupProbe:
+            httpGet:
+              path: /health/startup
+              port: 5000
+            initialDelaySeconds: 5
+            periodSeconds: 3
+            failureThreshold: 10
+            successThreshold: 1
+            timeoutSeconds: 2
+
+          # ── Liveness Probe ─────────────────────────────────────────────────────
+          # Restarts the pod if it becomes unresponsive
+          livenessProbe:
+            httpGet:
+              path: /health/live
+              port: 5000
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            failureThreshold: 3
+            successThreshold: 1
+            timeoutSeconds: 3
+
+          # ── Readiness Probe ────────────────────────────────────────────────────
+          # Removes the pod from Service endpoints if it can't serve traffic
+          readinessProbe:
+            httpGet:
+              path: /health/ready
+              port: 5000
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            failureThreshold: 3
+            successThreshold: 1
+            timeoutSeconds: 3
