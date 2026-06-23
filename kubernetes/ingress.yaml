@@ -2,10 +2,18 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: cloud-native-ingress
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    external-dns.alpha.kubernetes.io/hostname: "chaninduimanjith.com"
 spec:
   ingressClassName: nginx
+  tls:
+  - hosts:
+    - chaninduimanjith.com
+    secretName: cloud-native-tls
   rules:
-  - http:
+  - host: chaninduimanjith.com
+    http:
       paths:
       - path: /api
         pathType: Prefix
