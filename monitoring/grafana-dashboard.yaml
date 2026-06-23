@@ -1,0 +1,270 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: backend-grafana-dashboard
+  namespace: monitoring
+  labels:
+    grafana_dashboard: "1"          # Grafana sidecar discovers this label automatically
+data:
+  backend-dashboard.json: |
+    {
+      "__inputs": [],
+      "__requires": [],
+      "annotations": { "list": [] },
+      "editable": true,
+      "fiscalYearStartMonth": 0,
+      "graphTooltip": 1,
+      "id": null,
+      "links": [],
+      "panels": [
+        {
+          "collapsed": false,
+          "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+          "id": 100,
+          "title": "🚀 HTTP Traffic",
+          "type": "row"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": {
+            "defaults": {
+              "color": { "mode": "palette-classic" },
+              "unit": "reqps",
+              "thresholds": { "mode": "absolute", "steps": [{"color":"green","value":null},{"color":"red","value":80}] }
+            },
+            "overrides": []
+          },
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 1 },
+          "id": 1,
+          "options": { "tooltip": { "mode": "single" }, "legend": { "displayMode": "list", "placement": "bottom" } },
+          "targets": [
+            {
+              "datasource": { "type": "prometheus", "uid": "prometheus" },
+              "expr": "sum(rate(http_requests_total[5m])) by (route)",
+              "legendFormat": "{{ route }}",
+              "refId": "A"
+            }
+          ],
+          "title": "API Requests / sec (by Route)",
+          "type": "timeseries"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": {
+            "defaults": {
+              "color": { "mode": "palette-classic" },
+              "unit": "s",
+              "custom": { "lineWidth": 2 }
+            },
+            "overrides": []
+          },
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 1 },
+          "id": 2,
+          "targets": [
+            {
+              "datasource": { "type": "prometheus", "uid": "prometheus" },
+              "expr": "histogram_quantile(0.50, sum(rate(http_request_duration_seconds_bucket[5m])) by (le, route))",
+              "legendFormat": "p50 {{ route }}",
+              "refId": "A"
+            },
+            {
+              "datasource": { "type": "prometheus", "uid": "prometheus" },
+              "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[5m])) by (le, route))",
+              "legendFormat": "p95 {{ route }}",
+              "refId": "B"
+            },
+            {
+              "datasource": { "type": "prometheus", "uid": "prometheus" },
+              "expr": "histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket[5m])) by (le, route))",
+              "legendFormat": "p99 {{ route }}",
+              "refId": "C"
+            }
+          ],
+          "title": "Response Time Percentiles (p50 / p95 / p99)",
+          "type": "timeseries"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": {
+            "defaults": { "unit": "reqps", "color": { "mode": "palette-classic" } },
+            "overrides": []
+          },
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 9 },
+          "id": 3,
+          "targets": [
+            {
+              "datasource": { "type": "prometheus", "uid": "prometheus" },
+              "expr": "sum(rate(http_requests_total[5m])) by (status_code)",
+              "legendFormat": "HTTP {{ status_code }}",
+              "refId": "A"
+            }
+          ],
+          "title": "HTTP Status Codes / sec",
+          "type": "timeseries"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "percentunit",
+              "thresholds": { "mode": "absolute", "steps": [{"color":"green","value":null},{"color":"yellow","value":0.01},{"color":"red","value":0.05}] },
+              "color": { "mode": "thresholds" }
+            },
+            "overrides": []
+          },
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 9 },
+          "id": 4,
+          "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "orientation": "auto", "textMode": "auto", "colorMode": "background" },
+          "targets": [
+            {
+              "datasource": { "type": "prometheus", "uid": "prometheus" },
+              "expr": "sum(rate(http_requests_total{status_code=~\"5..\"}[5m])) / sum(rate(http_requests_total[5m]))",
+              "legendFormat": "Error Rate",
+              "refId": "A"
+            }
+          ],
+          "title": "Error Rate (5xx)",
+          "type": "stat"
+        },
+        {
+          "collapsed": false,
+          "gridPos": { "h": 1, "w": 24, "x": 0, "y": 17 },
+          "id": 101,
+          "title": "⚙️ Backend Resource Usage",
+          "type": "row"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": {
+            "defaults": { "unit": "percentunit", "min": 0, "max": 1,
+              "thresholds": { "mode": "absolute", "steps": [{"color":"green","value":null},{"color":"yellow","value":0.6},{"color":"red","value":0.8}] }
+            },
+            "overrides": []
+          },
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 18 },
+          "id": 5,
+          "targets": [
+            {
+              "datasource": { "type": "prometheus", "uid": "prometheus" },
+              "expr": "sum(rate(container_cpu_usage_seconds_total{namespace=\"default\",pod=~\"backend-.*\",container=\"backend\"}[5m])) by (pod) / sum(kube_pod_container_resource_limits{namespace=\"default\",pod=~\"backend-.*\",container=\"backend\",resource=\"cpu\"}) by (pod)",
+              "legendFormat": "CPU % — {{ pod }}",
+              "refId": "A"
+            }
+          ],
+          "title": "Backend CPU Usage (% of limit)",
+          "type": "timeseries"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": {
+            "defaults": { "unit": "percentunit", "min": 0, "max": 1,
+              "thresholds": { "mode": "absolute", "steps": [{"color":"green","value":null},{"color":"yellow","value":0.7},{"color":"red","value":0.85}] }
+            },
+            "overrides": []
+          },
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 18 },
+          "id": 6,
+          "targets": [
+            {
+              "datasource": { "type": "prometheus", "uid": "prometheus" },
+              "expr": "sum(container_memory_working_set_bytes{namespace=\"default\",pod=~\"backend-.*\",container=\"backend\"}) by (pod) / sum(kube_pod_container_resource_limits{namespace=\"default\",pod=~\"backend-.*\",container=\"backend\",resource=\"memory\"}) by (pod)",
+              "legendFormat": "Memory % — {{ pod }}",
+              "refId": "A"
+            }
+          ],
+          "title": "Backend Memory Usage (% of limit)",
+          "type": "timeseries"
+        },
+        {
+          "collapsed": false,
+          "gridPos": { "h": 1, "w": 24, "x": 0, "y": 26 },
+          "id": 102,
+          "title": "🏥 Kubernetes Health",
+          "type": "row"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": {
+            "defaults": { "unit": "short", "color": { "mode": "palette-classic" } },
+            "overrides": []
+          },
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 27 },
+          "id": 7,
+          "targets": [
+            {
+              "datasource": { "type": "prometheus", "uid": "prometheus" },
+              "expr": "increase(kube_pod_container_status_restarts_total{namespace=\"default\"}[1h])",
+              "legendFormat": "{{ pod }}",
+              "refId": "A"
+            }
+          ],
+          "title": "Pod Restarts (last 1h)",
+          "type": "timeseries"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": {
+            "defaults": {
+              "thresholds": { "mode": "absolute", "steps": [{"color":"red","value":null},{"color":"green","value":1}] },
+              "color": { "mode": "thresholds" },
+              "mappings": [{"options":{"0":{"text":"DOWN"},"1":{"text":"UP"}},"type":"value"}]
+            },
+            "overrides": []
+          },
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 27 },
+          "id": 8,
+          "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "orientation": "horizontal", "textMode": "auto", "colorMode": "background" },
+          "targets": [
+            {
+              "datasource": { "type": "prometheus", "uid": "prometheus" },
+              "expr": "kube_pod_status_ready{namespace=\"default\",condition=\"true\"}",
+              "legendFormat": "{{ pod }}",
+              "refId": "A"
+            }
+          ],
+          "title": "Pod Status (UP / DOWN)",
+          "type": "stat"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": {
+            "defaults": { "unit": "short", "color": { "mode": "palette-classic" } },
+            "overrides": []
+          },
+          "gridPos": { "h": 8, "w": 24, "x": 0, "y": 35 },
+          "id": 9,
+          "targets": [
+            {
+              "datasource": { "type": "prometheus", "uid": "prometheus" },
+              "expr": "count(kube_pod_status_phase{namespace=\"default\",phase=\"Running\"}) by (phase)",
+              "legendFormat": "Running",
+              "refId": "A"
+            },
+            {
+              "datasource": { "type": "prometheus", "uid": "prometheus" },
+              "expr": "count(kube_pod_status_phase{namespace=\"default\",phase=\"Pending\"}) by (phase)",
+              "legendFormat": "Pending",
+              "refId": "B"
+            },
+            {
+              "datasource": { "type": "prometheus", "uid": "prometheus" },
+              "expr": "count(kube_pod_status_phase{namespace=\"default\",phase=\"Failed\"}) by (phase)",
+              "legendFormat": "Failed",
+              "refId": "C"
+            }
+          ],
+          "title": "Kubernetes Namespace Health (default)",
+          "type": "timeseries"
+        }
+      ],
+      "refresh": "30s",
+      "schemaVersion": 38,
+      "tags": ["cloud-native", "backend", "nodejs", "kubernetes"],
+      "templating": { "list": [] },
+      "time": { "from": "now-1h", "to": "now" },
+      "timepicker": {},
+      "timezone": "browser",
+      "title": "Cloud Native Backend — Production Dashboard",
+      "uid": "cloud-native-backend-v2",
+      "version": 1
+    }

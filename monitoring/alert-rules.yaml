@@ -1,0 +1,114 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: backend-alerts
+  namespace: monitoring
+  labels:
+    release: monitoring          # Must match kube-prometheus-stack Helm release name
+    app: kube-prometheus-stack
+spec:
+  groups:
+    # ── Node.js Backend Alerts ─────────────────────────────────────────────────
+    - name: backend.rules
+      rules:
+
+        # High CPU usage on the backend pod (>80% of its CPU limit)
+        - alert: BackendHighCPU
+          expr: |
+            sum(rate(container_cpu_usage_seconds_total{namespace="default", pod=~"backend-.*", container="backend"}[5m])) by (pod)
+            /
+            sum(kube_pod_container_resource_limits{namespace="default", pod=~"backend-.*", container="backend", resource="cpu"}) by (pod)
+            > 0.80
+          for: 2m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Backend pod {{ $labels.pod }} CPU usage is high"
+            description: "CPU usage is {{ $value | humanizePercentage }} of the CPU limit for more than 2 minutes."
+
+        # High Memory usage on the backend pod (>85% of its memory limit)
+        - alert: BackendHighMemory
+          expr: |
+            sum(container_memory_working_set_bytes{namespace="default", pod=~"backend-.*", container="backend"}) by (pod)
+            /
+            sum(kube_pod_container_resource_limits{namespace="default", pod=~"backend-.*", container="backend", resource="memory"}) by (pod)
+            > 0.85
+          for: 2m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Backend pod {{ $labels.pod }} memory usage is high"
+            description: "Memory usage is {{ $value | humanizePercentage }} of the memory limit for more than 2 minutes."
+
+        # Pod restarted more than once in the last 10 minutes
+        - alert: BackendPodRestarts
+          expr: |
+            increase(kube_pod_container_status_restarts_total{namespace="default", pod=~"backend-.*"}[10m]) > 1
+          for: 0m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Backend pod {{ $labels.pod }} is restarting frequently"
+            description: "Pod has restarted {{ $value | printf \"%.0f\" }} times in the last 10 minutes."
+
+        # Backend pod is not ready
+        - alert: BackendPodDown
+          expr: |
+            kube_pod_status_ready{namespace="default", pod=~"backend-.*", condition="true"} == 0
+          for: 1m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Backend pod {{ $labels.pod }} is not ready"
+            description: "The backend pod has been in a non-ready state for more than 1 minute."
+
+        # HTTP 5xx error rate exceeds 5% of total requests
+        - alert: BackendHighErrorRate
+          expr: |
+            sum(rate(http_requests_total{status_code=~"5.."}[5m])) by (route)
+            /
+            sum(rate(http_requests_total[5m])) by (route)
+            > 0.05
+          for: 2m
+          labels:
+            severity: critical
+          annotations:
+            summary: "High error rate on route {{ $labels.route }}"
+            description: "Error rate is {{ $value | humanizePercentage }} for route {{ $labels.route }} over the last 5 minutes."
+
+        # 95th percentile API response time exceeds 500ms
+        - alert: BackendSlowResponse
+          expr: |
+            histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[5m])) by (le, route)) > 0.5
+          for: 2m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Slow API response on route {{ $labels.route }}"
+            description: "95th percentile latency is {{ printf \"%.2f\" $value }}s on route {{ $labels.route }}."
+
+    # ── Kubernetes Namespace Health ────────────────────────────────────────────
+    - name: namespace.rules
+      rules:
+
+        # Any pod in the default namespace is in a failed state
+        - alert: PodFailed
+          expr: |
+            kube_pod_status_phase{namespace="default", phase="Failed"} > 0
+          for: 0m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Pod {{ $labels.pod }} is in Failed state"
+            description: "Pod {{ $labels.pod }} in namespace {{ $labels.namespace }} has been in Failed state."
+
+        # A deployment has fewer replicas available than desired
+        - alert: DeploymentReplicasMismatch
+          expr: |
+            kube_deployment_spec_replicas{namespace="default"} != kube_deployment_status_available_replicas{namespace="default"}
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Deployment {{ $labels.deployment }} replicas mismatch"
+            description: "Deployment {{ $labels.deployment }} has fewer available replicas than desired for more than 5 minutes."
