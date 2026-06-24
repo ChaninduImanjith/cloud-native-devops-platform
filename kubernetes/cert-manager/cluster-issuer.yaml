@@ -4,15 +4,26 @@ metadata:
   name: letsencrypt-prod
 spec:
   acme:
-    # The ACME server URL
     server: https://acme-v02.api.letsencrypt.org/directory
-    # Email address used for ACME registration
-    email: chanindu.imanjith@gmail.com
-    # Name of a secret used to store the ACME account private key
+    email: chaninduimanjith@gmail.com
     privateKeySecretRef:
-      name: letsencrypt-prod-private-key
-    # Enable the HTTP-01 challenge provider
+      name: letsencrypt-prod-account-key
     solvers:
-      - http01:
-          ingress:
-            class: nginx
+    - http01:
+        ingress:
+          class: nginx
+---
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-staging
+spec:
+  acme:
+    server: https://acme-staging-v02.api.letsencrypt.org/directory
+    email: chaninduimanjith@gmail.com
+    privateKeySecretRef:
+      name: letsencrypt-staging-account-key
+    solvers:
+    - http01:
+        ingress:
+          class: nginx
