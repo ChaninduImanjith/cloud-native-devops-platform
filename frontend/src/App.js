@@ -5,21 +5,21 @@ function App() {
   const [messageData, setMessageData] = useState(null);
   const [statusData, setStatusData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [cpuUsage, setCpuUsage] = useState(32);
+  const [activeUsers, setActiveUsers] = useState(1240);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const apiUrl = "";
+        const apiUrl = ""; // Uses relative path for Ingress
         
-        // Fetch custom message
-        const msgRes = await fetch(`${apiUrl}/api/message`);
-        const msgData = await msgRes.json();
-        setMessageData(msgData);
+        const [msgRes, statusRes] = await Promise.all([
+          fetch(`${apiUrl}/api/message`).catch(() => null),
+          fetch(`${apiUrl}/api/status`).catch(() => null)
+        ]);
 
-        // Fetch server status
-        const statusRes = await fetch(`${apiUrl}/api/status`);
-        const stData = await statusRes.json();
-        setStatusData(stData);
+        if (msgRes) setMessageData(await msgRes.json());
+        if (statusRes) setStatusData(await statusRes.json());
 
       } catch (error) {
         console.error("Error fetching data:", error);
@@ -29,8 +29,13 @@ function App() {
     };
 
     fetchData();
-    // Auto-refresh status every 10 seconds
-    const interval = setInterval(fetchData, 10000);
+    const interval = setInterval(() => {
+      fetchData();
+      // Simulate dynamic metrics
+      setCpuUsage(Math.floor(Math.random() * (75 - 20 + 1) + 20));
+      setActiveUsers(prev => prev + Math.floor(Math.random() * 10 - 3));
+    }, 5000);
+    
     return () => clearInterval(interval);
   }, []);
 
@@ -46,88 +51,181 @@ function App() {
   };
 
   return (
-    <div className="dashboard-container">
-      <div className="background-shapes">
-        <div className="shape shape-1"></div>
-        <div className="shape shape-2"></div>
-        <div className="shape shape-3"></div>
-      </div>
+    <div className="dashboard-layout">
+      {/* Sidebar Navigation */}
+      <nav className="sidebar">
+        <div className="sidebar-logo">
+          <div className="logo-icon">☁️</div>
+          <h2>DevOpsPro</h2>
+        </div>
+        <ul className="nav-links">
+          <li className="active">📊 Overview</li>
+          <li>📦 Pods</li>
+          <li>🌐 Network</li>
+          <li>⚙️ Settings</li>
+        </ul>
+        <div className="sidebar-footer">
+          <p>Logged in as <b>Admin</b></p>
+        </div>
+      </nav>
 
-      <header className="dashboard-header">
-        <h1>Cloud Native DevOps Platform</h1>
-        <p className="subtitle">Enterprise-Grade Infrastructure Demonstration</p>
-      </header>
-
-      {loading ? (
-        <div className="loader">Initializing System...</div>
-      ) : (
-        <main className="dashboard-content">
-          
-          {/* Main Status Banner */}
-          <div className="card glass-card hero-card">
-            <div className="status-indicator">
-              <span className={`pulse ${statusData?.status === "healthy" ? "healthy" : "down"}`}></span>
-              <h2>{statusData?.status === "healthy" ? "System Healthy" : "System Unavailable"}</h2>
-            </div>
-            <p className="main-message">
-              {messageData?.message || "Waiting for backend response..."}
-            </p>
-            <div className="version-badge">API Version: {messageData?.version || "Unknown"}</div>
+      {/* Main Content */}
+      <div className="main-content">
+        <header className="topbar">
+          <div className="topbar-search">
+            <input type="text" placeholder="Search resources..." />
           </div>
+          <div className="topbar-actions">
+            <button className="deploy-btn">🚀 Trigger Pipeline</button>
+            <div className="avatar">A</div>
+          </div>
+        </header>
 
-          {/* Metrics Grid */}
-          <div className="metrics-grid">
+        {loading ? (
+          <div className="loader-container">
+            <div className="spinner"></div>
+            <p>Connecting to Cluster API...</p>
+          </div>
+        ) : (
+          <div className="dashboard-container">
             
-            <div className="card glass-card metric-card">
-              <div className="metric-icon">⏱️</div>
-              <div className="metric-info">
-                <h3>Backend Uptime</h3>
-                <p className="metric-value">
-                  {statusData ? formatUptime(statusData.uptime) : "0h 0m 0s"}
-                </p>
+            {/* API Status Hero Card */}
+            <div className="card hero-card">
+              <div className="hero-header">
+                <h2>Platform Status</h2>
+                <span className={`status-badge ${statusData?.status === "healthy" ? "healthy" : "down"}`}>
+                  <span className="pulse"></span>
+                  {statusData?.status === "healthy" ? "All Systems Operational" : "Degraded State"}
+                </span>
+              </div>
+              <p className="main-message">
+                {messageData?.message || "Awaiting API response..."}
+              </p>
+              <div className="hero-footer">
+                <span>API Version: {messageData?.version || "Unknown"}</span>
+                <span>Last Synced: {statusData ? new Date(statusData.timestamp).toLocaleTimeString() : "--:--:--"}</span>
               </div>
             </div>
 
-            <div className="card glass-card metric-card">
-              <div className="metric-icon">💾</div>
-              <div className="metric-info">
-                <h3>Memory Usage (Heap)</h3>
-                <p className="metric-value">
-                  {statusData ? formatMemory(statusData.memory.heapUsed) : "0 MB"}
-                </p>
+            {/* Metrics Grid */}
+            <div className="metrics-grid">
+              <div className="card metric-card">
+                <div className="metric-header">
+                  <h3>Active Users</h3>
+                  <span className="icon">👥</span>
+                </div>
+                <div className="metric-value">{activeUsers.toLocaleString()}</div>
+                <div className="metric-trend up">↑ 12% vs last hour</div>
+              </div>
+
+              <div className="card metric-card">
+                <div className="metric-header">
+                  <h3>Backend Uptime</h3>
+                  <span className="icon">⏱️</span>
+                </div>
+                <div className="metric-value">{statusData ? formatUptime(statusData.uptime) : "0h 0m 0s"}</div>
+                <div className="metric-trend neutral">Stable</div>
+              </div>
+
+              <div className="card metric-card">
+                <div className="metric-header">
+                  <h3>Heap Memory</h3>
+                  <span className="icon">💾</span>
+                </div>
+                <div className="metric-value">{statusData ? formatMemory(statusData.memory.heapUsed) : "0 MB"}</div>
+                <div className="metric-trend down">Optimized</div>
+              </div>
+
+              <div className="card metric-card">
+                <div className="metric-header">
+                  <h3>CPU Load</h3>
+                  <span className="icon">⚡</span>
+                </div>
+                <div className="metric-value">{cpuUsage}%</div>
+                <div className="progress-bar">
+                  <div className="progress-fill" style={{ width: `${cpuUsage}%`, backgroundColor: cpuUsage > 70 ? '#ef4444' : '#10b981' }}></div>
+                </div>
               </div>
             </div>
 
-            <div className="card glass-card metric-card">
-              <div className="metric-icon">📡</div>
-              <div className="metric-info">
-                <h3>Last Synced</h3>
-                <p className="metric-value time-value">
-                  {statusData ? new Date(statusData.timestamp).toLocaleTimeString() : "--:--:--"}
-                </p>
+            <div className="bottom-grid">
+              {/* Cluster Health Table */}
+              <div className="card table-card">
+                <div className="card-header">
+                  <h3>Cluster Health (Pods)</h3>
+                </div>
+                <table className="data-table">
+                  <thead>
+                    <tr>
+                      <th>Service</th>
+                      <th>Replicas</th>
+                      <th>Status</th>
+                      <th>Restarts</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>frontend-deployment</td>
+                      <td>2 / 2</td>
+                      <td><span className="badge success">Running</span></td>
+                      <td>0</td>
+                    </tr>
+                    <tr>
+                      <td>backend-api</td>
+                      <td>2 / 2</td>
+                      <td><span className="badge success">Running</span></td>
+                      <td>0</td>
+                    </tr>
+                    <tr>
+                      <td>postgresql-db</td>
+                      <td>1 / 1</td>
+                      <td><span className="badge success">Running</span></td>
+                      <td>0</td>
+                    </tr>
+                    <tr>
+                      <td>ingress-nginx</td>
+                      <td>1 / 1</td>
+                      <td><span className="badge success">Running</span></td>
+                      <td>0</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Recent Deployments */}
+              <div className="card list-card">
+                <div className="card-header">
+                  <h3>Recent Deployments</h3>
+                </div>
+                <div className="list-group">
+                  <div className="list-item">
+                    <div className="item-icon success">✓</div>
+                    <div className="item-details">
+                      <h4>Update UI components</h4>
+                      <p>Commit <code>a1b2c3d</code> • 5 mins ago</p>
+                    </div>
+                  </div>
+                  <div className="list-item">
+                    <div className="item-icon success">✓</div>
+                    <div className="item-details">
+                      <h4>Fix PostgreSQL connection pool</h4>
+                      <p>Commit <code>9f8e7d6</code> • 2 hours ago</p>
+                    </div>
+                  </div>
+                  <div className="list-item">
+                    <div className="item-icon error">✗</div>
+                    <div className="item-details">
+                      <h4>Update Node.js version</h4>
+                      <p>Commit <code>4a5b6c7</code> • Failed (Rollback)</p>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
-
+            
           </div>
-
-          {/* Architecture Info */}
-          <div className="card glass-card info-card">
-            <h3>🛠️ Architecture Overview</h3>
-            <ul className="feature-list">
-              <li>✅ React.js Frontend (Containerized)</li>
-              <li>✅ Node.js Express API Backend</li>
-              <li>✅ Kubernetes Deployment & Service</li>
-              <li>✅ NGINX Ingress Routing</li>
-              <li>✅ Prometheus Metrics & Grafana Monitoring</li>
-            </ul>
-          </div>
-
-        </main>
-      )}
-
-      <footer className="dashboard-footer">
-        <p>Deployed via GitHub Actions & Minikube</p>
-      </footer>
+        )}
+      </div>
     </div>
   );
 }
