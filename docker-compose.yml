@@ -1,7 +1,7 @@
 services:
 
   backend:
-    build: ./backend
+    image: chaninduimanjith/cloud-native-devops-backend:latest
     ports:
       - "5000:5000"
     restart: unless-stopped
@@ -9,7 +9,7 @@ services:
       - app-network
 
   frontend:
-    build: ./frontend
+    image: chaninduimanjith/cloud-native-devops-frontend:latest
     ports:
       - "3000:3000"
     depends_on:
