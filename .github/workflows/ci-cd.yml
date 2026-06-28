@@ -36,33 +36,23 @@ jobs:
           push: true
           tags: chaninduimanjith/cloud-native-devops-frontend:latest
 
-  deploy:
+  deploy-ec2:
     needs: docker
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v3
-
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v4
+      - name: Deploy to EC2 Free-Tier Instance
+        uses: appleboy/ssh-action@v1.0.3
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: us-east-1 # Change to your region
-
-      - name: Update KubeConfig
-        run: aws eks update-kubeconfig --name cloud-native-devops-cluster --region us-east-1
-
-      - name: Inject Secrets to Kubernetes
-        run: |
-          # Create namespace if it doesn't exist
-          kubectl create namespace monitoring --dry-run=client -o yaml | kubectl apply -f -
-          
-          # Create the Alertmanager SMTP password secret securely from GitHub Secrets
-          kubectl create secret generic alertmanager-auth \
-            --namespace monitoring \
-            --from-literal=password='${{ secrets.GMAIL_APP_PASSWORD }}' \
-            --dry-run=client -o yaml | kubectl apply -f -
-          
-          # Apply monitoring config separately (not in argocd path)
-          kubectl apply -f monitoring/alertmanager-config.yaml
+          host: ${{ secrets.EC2_HOST }}
+          username: ubuntu
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            cd cloud-native-devops-platform
+            git pull origin main
+            sudo docker pull chaninduimanjith/cloud-native-devops-frontend:latest
+            sudo docker pull chaninduimanjith/cloud-native-devops-backend:latest
+            sudo docker rm -f frontend backend || true
+            sudo docker network create app-network || true
+            sudo docker run -d --name backend --network app-network --restart unless-stopped -p 5000:5000 chaninduimanjith/cloud-native-devops-backend:latest
+            sudo docker run -d --name frontend --network app-network --restart unless-stopped -p 3000:3000 chaninduimanjith/cloud-native-devops-frontend:latest
+            echo "Deployment complete!"
