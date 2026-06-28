@@ -6,7 +6,14 @@ A production-grade, cloud-native full-stack application deployed on **AWS EKS** 
 
 ## 🌐 Live Application
 
-> **URL:** `http://a4977326368864f1cbe72703bd19174a-173171894.us-east-1.elb.amazonaws.com`
+> **Active Cost-Optimized URL:** `http://98.81.211.7:3000` (AWS Free-Tier EC2)
+
+> **Original EKS Ingress URL:** `http://a4977326368864f1cbe72703bd19174a-173171894.us-east-1.elb.amazonaws.com` *(Decommissioned)*
+
+**💡 Cost Optimization Architecture Note:** 
+*The primary architecture for this project was designed and successfully deployed on a highly-available **Amazon EKS (Kubernetes)** cluster. However, to demonstrate cloud cost-awareness and optimization, the live EKS infrastructure was decommissioned after testing.* 
+
+*The application is currently hosted on a lightweight, single-node Docker Compose setup using an **AWS EC2 Free-Tier instance**. All original Kubernetes manifests, Terraform configurations, and CI/CD pipelines remain intact and production-ready in this repository.*
 
 ---
 
@@ -80,23 +87,23 @@ A production-grade, cloud-native full-stack application deployed on **AWS EKS** 
 
 ## 🛠️ Tech Stack
 
-| Layer | Technology |
-|-------|-----------|
-| **Frontend** | React 19, NGINX |
-| **Backend** | Node.js, Express.js |
-| **Database** | PostgreSQL |
-| **Containerization** | Docker, Docker Compose |
-| **Container Registry** | Docker Hub |
-| **Infrastructure (IaC)** | Terraform (AWS VPC + EKS modules) |
-| **Cloud Provider** | AWS (EKS, EC2, VPC, ELB) |
-| **Orchestration** | Kubernetes (EKS v1.30) |
-| **Ingress** | NGINX Ingress Controller |
-| **GitOps** | Argo CD |
-| **CI/CD** | GitHub Actions |
-| **Monitoring** | Prometheus, Grafana, Alertmanager |
-| **Metrics** | prom-client (custom Node.js metrics) |
-| **Auto-scaling** | Kubernetes HPA (Horizontal Pod Autoscaler) |
-| **Secrets** | GitHub Actions Secrets → Kubernetes Secrets |
+| Layer                    | Technology                                  |
+| ------------------------ | ------------------------------------------- |
+| **Frontend**             | React 19, NGINX                             |
+| **Backend**              | Node.js, Express.js                         |
+| **Database**             | PostgreSQL                                  |
+| **Containerization**     | Docker, Docker Compose                      |
+| **Container Registry**   | Docker Hub                                  |
+| **Infrastructure (IaC)** | Terraform (AWS VPC + EKS modules)           |
+| **Cloud Provider**       | AWS (EKS, EC2, VPC, ELB)                    |
+| **Orchestration**        | Kubernetes (EKS v1.30)                      |
+| **Ingress**              | NGINX Ingress Controller                    |
+| **GitOps**               | Argo CD                                     |
+| **CI/CD**                | GitHub Actions                              |
+| **Monitoring**           | Prometheus, Grafana, Alertmanager           |
+| **Metrics**              | prom-client (custom Node.js metrics)        |
+| **Auto-scaling**         | Kubernetes HPA (Horizontal Pod Autoscaler)  |
+| **Secrets**              | GitHub Actions Secrets → Kubernetes Secrets |
 
 ---
 
@@ -169,16 +176,16 @@ cloud-native-devops-platform/
 
 Before you begin, ensure you have the following installed:
 
-| Tool | Version | Purpose |
-|------|---------|---------|
-| `git` | any | Version control |
-| `docker` | 20+ | Build & run containers |
-| `docker compose` | v2+ | Local development |
-| `node` + `npm` | 18+ | Run app locally |
-| `terraform` | 1.5+ | Provision AWS infra |
-| `aws cli` | v2 | AWS authentication |
-| `kubectl` | 1.28+ | Manage Kubernetes |
-| `helm` | 3.x | Install Kubernetes packages |
+| Tool             | Version | Purpose                     |
+| ---------------- | ------- | --------------------------- |
+| `git`            | any     | Version control             |
+| `docker`         | 20+     | Build & run containers      |
+| `docker compose` | v2+     | Local development           |
+| `node` + `npm`   | 18+     | Run app locally             |
+| `terraform`      | 1.5+    | Provision AWS infra         |
+| `aws cli`        | v2      | AWS authentication          |
+| `kubectl`        | 1.28+   | Manage Kubernetes           |
+| `helm`           | 3.x     | Install Kubernetes packages |
 
 ---
 
@@ -278,6 +285,7 @@ terraform plan
 ```
 
 This will provision:
+
 - **VPC** with CIDR `10.0.0.0/16`
 - **3 Private Subnets** (for EKS nodes): `10.0.1.0/24`, `10.0.2.0/24`, `10.0.3.0/24`
 - **3 Public Subnets** (for Load Balancers): `10.0.101.0/24`, `10.0.102.0/24`, `10.0.103.0/24`
@@ -344,6 +352,7 @@ kubectl apply -f kubernetes/ingress.yaml
 ```
 
 > Routes:
+>
 > - `/` → Frontend (port 3000)
 > - `/api` → Backend (port 5000)
 
@@ -397,6 +406,7 @@ kubectl apply -f kubernetes/argocd/application.yaml
 ```
 
 This creates an Argo CD Application that:
+
 - **Watches** `https://github.com/ChaninduImanjith/cloud-native-devops-platform.git`
 - **Syncs** the `kubernetes/` directory (recursively) to the cluster
 - **Auto-prunes** deleted resources
@@ -438,9 +448,9 @@ Push to main
 
 ### Docker Hub Images
 
-| Image | Tag |
-|-------|-----|
-| `chaninduimanjith/cloud-native-devops-backend` | `latest` |
+| Image                                           | Tag      |
+| ----------------------------------------------- | -------- |
+| `chaninduimanjith/cloud-native-devops-backend`  | `latest` |
 | `chaninduimanjith/cloud-native-devops-frontend` | `latest` |
 
 ---
@@ -454,6 +464,7 @@ bash monitoring/install-monitoring.sh
 ```
 
 This installs via Helm:
+
 - **Prometheus** — metrics collection & alerting
 - **Grafana** — dashboards & visualization
 - **Alertmanager** — alert routing (email notifications)
@@ -488,12 +499,12 @@ kubectl port-forward -n monitoring svc/monitoring-kube-prometheus-prometheus 909
 
 The backend exposes these custom metrics at `/metrics`:
 
-| Metric | Type | Description |
-|--------|------|-------------|
-| `http_requests_total` | Counter | Total HTTP requests by method, route, status |
-| `http_request_duration_seconds` | Histogram | Request latency in seconds |
-| `http_requests_in_flight` | Gauge | Current active requests |
-| `nodejs_*` | Default | Node.js runtime metrics (heap, GC, event loop) |
+| Metric                          | Type      | Description                                    |
+| ------------------------------- | --------- | ---------------------------------------------- |
+| `http_requests_total`           | Counter   | Total HTTP requests by method, route, status   |
+| `http_request_duration_seconds` | Histogram | Request latency in seconds                     |
+| `http_requests_in_flight`       | Gauge     | Current active requests                        |
+| `nodejs_*`                      | Default   | Node.js runtime metrics (heap, GC, event loop) |
 
 ---
 
@@ -507,7 +518,7 @@ Horizontal Pod Autoscaler is configured for both backend and frontend.
 # kubernetes/hpa/backend-hpa.yaml
 minReplicas: 2
 maxReplicas: 5
-CPU target:    70% utilization
+CPU target: 70% utilization
 Memory target: 80% utilization
 ```
 
@@ -523,16 +534,17 @@ kubectl get hpa -w
 
 ## 🔌 API Endpoints
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `GET` | `/api/message` | Returns platform status message |
-| `GET` | `/api/status` | Returns uptime, memory, health |
-| `GET` | `/metrics` | Prometheus metrics scrape endpoint |
-| `GET` | `/health/live` | Liveness probe |
-| `GET` | `/health/ready` | Readiness probe |
-| `GET` | `/health/startup` | Startup probe |
+| Method | Endpoint          | Description                        |
+| ------ | ----------------- | ---------------------------------- |
+| `GET`  | `/api/message`    | Returns platform status message    |
+| `GET`  | `/api/status`     | Returns uptime, memory, health     |
+| `GET`  | `/metrics`        | Prometheus metrics scrape endpoint |
+| `GET`  | `/health/live`    | Liveness probe                     |
+| `GET`  | `/health/ready`   | Readiness probe                    |
+| `GET`  | `/health/startup` | Startup probe                      |
 
 **Example:**
+
 ```bash
 curl http://<ELB-URL>/api/message
 # {"message":"DevOps Platform Backend Running 🚀","timestamp":"...","version":"2.0.0"}
@@ -547,19 +559,20 @@ curl http://<ELB-URL>/api/status
 
 Go to **GitHub → Repository → Settings → Secrets and variables → Actions** and add:
 
-| Secret Name | Description |
-|-------------|-------------|
-| `DOCKER_USERNAME` | Docker Hub username (`chaninduimanjith`) |
-| `DOCKER_TOKEN` | Docker Hub access token (not password) |
-| `AWS_ACCESS_KEY_ID` | AWS IAM access key |
-| `AWS_SECRET_ACCESS_KEY` | AWS IAM secret key |
-| `GMAIL_APP_PASSWORD` | Gmail App Password for Alertmanager email alerts |
+| Secret Name             | Description                                      |
+| ----------------------- | ------------------------------------------------ |
+| `DOCKER_USERNAME`       | Docker Hub username (`chaninduimanjith`)         |
+| `DOCKER_TOKEN`          | Docker Hub access token (not password)           |
+| `AWS_ACCESS_KEY_ID`     | AWS IAM access key                               |
+| `AWS_SECRET_ACCESS_KEY` | AWS IAM secret key                               |
+| `GMAIL_APP_PASSWORD`    | Gmail App Password for Alertmanager email alerts |
 
 ---
 
 ## 🔧 Troubleshooting
 
 ### Check Pod Status
+
 ```bash
 kubectl get pods -A
 kubectl describe pod <pod-name>
@@ -567,19 +580,23 @@ kubectl logs <pod-name>
 ```
 
 ### Check Ingress
+
 ```bash
 kubectl get ingress
 kubectl describe ingress cloud-native-ingress
 ```
 
 ### Pods Stuck in Pending (Too Many Pods)
+
 EKS `t3.micro` has limited pod capacity. This was resolved by enabling VPC CNI prefix delegation:
+
 ```bash
 # Already configured in terraform/eks.tf
 # ENABLE_PREFIX_DELEGATION = "true" → allows up to 110 pods/node
 ```
 
 ### Rolling Restart After Image Update
+
 ```bash
 kubectl rollout restart deployment/backend
 kubectl rollout restart deployment/frontend
@@ -587,6 +604,7 @@ kubectl rollout status deployment/backend
 ```
 
 ### Destroy Infrastructure (Save AWS Costs)
+
 ```bash
 cd terraform
 terraform destroy
@@ -597,21 +615,22 @@ terraform destroy
 
 ## 📊 Cluster Info
 
-| Property | Value |
-|----------|-------|
-| **Cluster Name** | `cloud-native-devops-cluster` |
-| **Region** | `us-east-1` |
-| **Kubernetes Version** | `1.30` |
-| **Node Instance Type** | `t3.micro` |
-| **Node Count** | 3 (min: 2, max: 4) |
-| **Max Pods/Node** | 110 (via VPC CNI prefix delegation) |
-| **VPC CIDR** | `10.0.0.0/16` |
+| Property               | Value                               |
+| ---------------------- | ----------------------------------- |
+| **Cluster Name**       | `cloud-native-devops-cluster`       |
+| **Region**             | `us-east-1`                         |
+| **Kubernetes Version** | `1.30`                              |
+| **Node Instance Type** | `t3.micro`                          |
+| **Node Count**         | 3 (min: 2, max: 4)                  |
+| **Max Pods/Node**      | 110 (via VPC CNI prefix delegation) |
+| **VPC CIDR**           | `10.0.0.0/16`                       |
 
 ---
 
 ## 👨‍💻 Author
 
 **Chanindu Imanjith**
+
 - GitHub: [@ChaninduImanjith](https://github.com/ChaninduImanjith)
 - Docker Hub: [chaninduimanjith](https://hub.docker.com/u/chaninduimanjith)
 
