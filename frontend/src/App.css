@@ -412,6 +412,61 @@ code {
 }
 
 @media (max-width: 768px) {
-  .sidebar { display: none; }
-  .main-content { margin-left: 0; }
+  .sidebar { 
+    display: none; 
+  }
+  
+  .main-content { 
+    margin-left: 0; 
+  }
+  
+  .topbar {
+    padding: 0 1rem;
+  }
+  
+  .topbar-search input {
+    width: 150px;
+  }
+  
+  .dashboard-container {
+    padding: 1rem;
+  }
+  
+  .hero-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+  
+  .hero-header h2 {
+    font-size: 1.25rem;
+  }
+  
+  .main-message {
+    font-size: 1.5rem;
+  }
+  
+  .hero-footer {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  .data-table-wrapper {
+    overflow-x: auto;
+  }
+  
+  .metrics-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .topbar-search {
+    display: none;
+  }
+  
+  .deploy-btn {
+    padding: 0.4rem 0.8rem;
+    font-size: 0.875rem;
+  }
 }

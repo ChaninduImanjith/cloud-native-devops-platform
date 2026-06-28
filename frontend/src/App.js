@@ -154,6 +154,7 @@ function App() {
                 <div className="card-header">
                   <h3>Cluster Health (Pods)</h3>
                 </div>
+                <div className="data-table-wrapper">
                 <table className="data-table">
                   <thead>
                     <tr>
@@ -190,6 +191,7 @@ function App() {
                     </tr>
                   </tbody>
                 </table>
+                </div>
               </div>
 
               {/* Recent Deployments */}
